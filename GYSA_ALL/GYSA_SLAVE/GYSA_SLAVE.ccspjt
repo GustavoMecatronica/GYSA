@@ -1,0 +1,47 @@
+[PROJECT]
+Target=GYSA_SLAVE.hex
+Processor_Text=PIC16F887
+CCSVersion=5.091
+Compiler=PCM
+[Target Data]
+FileList=GYSA_SLAVE.c
+[GYSA_SLAVE.c]
+Type=4
+[mru-list]
+1=GYSA_SLAVE.c
+
+[defines]
+buildcount=9
+
+[ProjectLog]
+Days=1
+D1=04-03-2021
+D1_L=13
+D1_L1=[45014]Stopped Editing.
+D1_L2=[45417]Started Editing.
+D1_L3=[47219]Project Closed.
+D1_L4=[49803]Project Opened.
+D1_L5=[50371]Started Editing.
+D1_L6=[50740]Stopped Editing.
+D1_L7=[52072]Started Editing.
+D1_L8=[52390]Stopped Editing.
+D1_L9=[52716]Started Editing.
+D1_L10=[53022]Stopped Editing.
+D1_L11=[53194]Started Editing.
+D1_L12=[53698]Stopped Editing.
+TotalEdit=5
+TotalDebug=0
+D1_E=5
+D1_D=0
+D1_L13=[56486]Project Closed.
+
+[Opened Files]
+1=GYSA_SLAVE.c
+t1=212
+Count=1
+
+[fileformats]
+forcecoff=0
+[Units]
+Count=1
+1=GYSA_SLAVE (main)

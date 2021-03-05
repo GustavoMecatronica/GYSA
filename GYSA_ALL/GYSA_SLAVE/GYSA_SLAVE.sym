@@ -1,0 +1,71 @@
+004-005 @WRITE_PROGRAM_MEMORY8.P1
+004-005 @READ_PROGRAM_MEMORY8.P2
+005     PORTA
+006     PORTB
+007     PORTC
+008     PORTD
+015     CCP_1_LOW
+015     CCP_1
+016     CCP_1_HIGH
+01B     CCP_2_LOW
+01B     CCP_2
+01C     CCP_2_HIGH
+020     velocidad
+021-022 contador
+023     @TRIS_C
+024-025 cosechar_izq.i
+024-025 cosechar_der.i
+026     @delay_ms1.P1
+077     @SCRATCH
+078     @SCRATCH
+078     _RETURN_
+079     @SCRATCH
+07A     @SCRATCH
+107.6   C1OUT
+108.6   C2OUT
+10D-10E @READ_PROGRAM_MEMORY8.P1
+10D-10E @WRITE_PROGRAM_MEMORY8.P2
+
+ROM Allocation:
+000004  @delay_ms1
+000019  cosechar_der
+00007F  cosechar_izq
+0000E5  adelante_x
+0000FD  main
+0000FD  @cinit1
+00011B  @cinit2
+
+Project Directory:
+    C:\Users\Gustavo\Documents\UNIVERSIDAD\5TO CUATRIMESTRE\INTEGRADORA\GYSA_SLAVE\
+
+Project Files:
+    GYSA_SLAVE.c                                            [04-mar.-21 14:50  CRC=05420707]
+    ..\..\..\..\..\..\..\Program Files (x86)\PICC\Devices\16F887.h [30-oct.-19 15:48  CRC=C6420252]
+
+Source signature=91C60BAB
+Program memory checksum=0000
+Hex file CRC=22C5
+
+Units:
+    C:\Users\Gustavo\Documents\UNIVERSIDAD\5TO CUATRIMESTRE\INTEGRADORA\GYSA_SLAVE\GYSA_SLAVE (main)
+
+Compiler Settings:
+    Processor:      PIC16F887
+    Pointer Size:   16
+    ADC Range:      0-255
+    Opt Level:      9
+    Short,Int,Long: UNSIGNED: 1,8,16
+    Float,Double:   32,32
+    Compile Mode:       CCS5
+
+Output Files:
+    XREF file:   GYSA_SLAVE.xsym
+    Errors:      GYSA_SLAVE.err
+    Ext Symbols: GYSA_SLAVE.esym
+    INHX8:       GYSA_SLAVE.hex
+    Symbols:     GYSA_SLAVE.sym
+    List:        GYSA_SLAVE.lst
+    Debug/COFF:  GYSA_SLAVE.cof
+    Project:     GYSA_SLAVE.ccspjt
+    Call Tree:   GYSA_SLAVE.tre
+    Statistics:  GYSA_SLAVE.STA

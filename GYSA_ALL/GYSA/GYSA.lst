@@ -1,0 +1,1478 @@
+CCS PCM C Compiler, Version 5.091, 13314               04-mar.-21 13:48
+
+               Filename:   C:\Users\Gustavo\Documents\UNIVERSIDAD\5TO CUATRIMESTRE\INTEGRADORA\GYSA\GYSA.lst
+
+               ROM used:   1013 words (12%)
+                           Largest free fragment is 2048
+               RAM used:   16 (4%) at main() level
+                           61 (17%) worst case
+               Stack used: 4 locations (2 in main + 2 for interrupts)
+               Stack size: 8
+
+0000:  MOVLW  03
+0001:  MOVWF  0A
+0002:  GOTO   3A1
+0003:  NOP
+0004:  MOVWF  7F
+0005:  SWAPF  03,W
+0006:  CLRF   03
+0007:  MOVWF  21
+0008:  MOVF   0A,W
+0009:  MOVWF  20
+000A:  CLRF   0A
+000B:  MOVF   04,W
+000C:  MOVWF  22
+000D:  MOVF   77,W
+000E:  MOVWF  23
+000F:  MOVF   78,W
+0010:  MOVWF  24
+0011:  MOVF   79,W
+0012:  MOVWF  25
+0013:  MOVF   7A,W
+0014:  MOVWF  26
+0015:  BCF    03.7
+0016:  BCF    03.5
+0017:  BTFSS  0B.4
+0018:  GOTO   01B
+0019:  BTFSC  0B.1
+001A:  GOTO   02C
+001B:  MOVF   22,W
+001C:  MOVWF  04
+001D:  MOVF   23,W
+001E:  MOVWF  77
+001F:  MOVF   24,W
+0020:  MOVWF  78
+0021:  MOVF   25,W
+0022:  MOVWF  79
+0023:  MOVF   26,W
+0024:  MOVWF  7A
+0025:  MOVF   20,W
+0026:  MOVWF  0A
+0027:  SWAPF  21,W
+0028:  MOVWF  03
+0029:  SWAPF  7F,F
+002A:  SWAPF  7F,W
+002B:  RETFIE
+002C:  BCF    0A.3
+002D:  BCF    0A.4
+002E:  GOTO   044
+.................... #include<16F887.h>
+.................... //////////// Standard Header file for the PIC16F887 device ////////////////
+.................... ///////////////////////////////////////////////////////////////////////////
+.................... ////        (C) Copyright 1996, 2014 Custom Computer Services          ////
+.................... //// This source code may only be used by licensed users of the CCS C  ////
+.................... //// compiler.  This source code may only be distributed to other      ////
+.................... //// licensed users of the CCS C compiler.  No other use, reproduction ////
+.................... //// or distribution is permitted without written permission.          ////
+.................... //// Derivative programs created using this software in object code    ////
+.................... //// form are not restricted in any way.                               ////
+.................... ///////////////////////////////////////////////////////////////////////////
+.................... #device PIC16F887
+.................... 
+.................... #list
+.................... 
+.................... #fuses  PROTECT, MCLR
+.................... #use delay(internal=4M)
+002F:  MOVLW  57
+0030:  MOVWF  04
+0031:  BCF    03.7
+0032:  MOVF   00,W
+0033:  BTFSC  03.2
+0034:  GOTO   043
+0035:  MOVLW  01
+0036:  MOVWF  78
+0037:  CLRF   77
+0038:  DECFSZ 77,F
+0039:  GOTO   038
+003A:  DECFSZ 78,F
+003B:  GOTO   037
+003C:  MOVLW  4A
+003D:  MOVWF  77
+003E:  DECFSZ 77,F
+003F:  GOTO   03E
+0040:  GOTO   041
+0041:  DECFSZ 00,F
+0042:  GOTO   035
+0043:  RETURN
+.................... //////funciones//////////////////////////////
+.................... void INTERRUPCION();
+.................... void arranque();//para buscar lo inicios de carrera del eje z
+.................... void eje_z();// para buscar hacia arriba y abajo en el eje z
+.................... void eje_x();// para avanzar el robot
+.................... void cosechar_der();//para cosechar e fruto del lado derecho
+.................... void cosechar_izq();// para cortar el fruto del lado izquierdo
+.................... void final(); // para esperar el reinicio del equipo luego de terminar de cosechar
+.................... #byte PORTA=5//dedicado a controles y entradas
+.................... #byte PORTB=6//dedicado a control de motores y entrada de boton de paro en RB0
+.................... #byte PORTC=7//dedicado a indicadores, entrada de los limit switch y encoder
+.................... #byte PORTD=8//dedicado a salidas y entrada de los limit switch
+.................... #byte PORTE=9//dedicado a entrada de sensores
+.................... /////////motor eje z////////////
+.................... // Motor 1
+.................... #define paso_z PORTB,1//para dar un paso en el motor debemos activar y desactivar esta salida.
+.................... #define dir_z PORTB,2// dependiendo del valor de esta salida tendremos una direccionu otra. 0-abajo 1-arriba
+.................... #define en_z PORTB,3//Habilitacion de driver, funciona con logica negativa
+.................... //motor para posicionar el sistema de corte, lado derecho, Motor 2
+.................... #define paso_z1 PORTB,4
+.................... #define dir_z1 PORTB,5 //0-derecha 1-izquierda
+.................... #define en_z1 PORTB,6
+.................... //motor para posicionar el sistema de corte, lado izquierdo, Motor 3
+.................... #define paso_z2 PORTB,7
+.................... #define dir_z2 PORTD,7 //0-derecha 1-izquierda
+.................... #define en_z2 PORTD,6
+.................... 
+.................... /////////botones de arranque y paro//////
+.................... #define inicio PORTE,0//boton de inicio **** el boton de paro se conecta al RB0****
+.................... // el boton de paro se maneja con la interrupcion del pin RB0
+.................... 
+.................... ///////////sensores de color y encoder////////////
+.................... #define sensor1 PORTA,0
+.................... #define sensor2 PORTA,1
+.................... #define sensor3 PORTA,2
+.................... #define sensor4 PORTA,3
+.................... #define sensor5 PORTA,4
+.................... #define sensor6 PORTA,5
+.................... #define sensor7 PORTA,6
+.................... #define sensor8 PORTA,7
+.................... ////////limit switch's////////
+.................... #define ls1 PORTD,3
+.................... #define ls2 PORTD,2
+.................... #define ls3 PORTD,1
+.................... #define ls4 PORTD,0
+.................... #define ls5 PORTC,7
+.................... #define ls6 PORTC,8
+.................... 
+.................... /////////indicadores////////////
+.................... #define led_inicio PORTC,0// indicador de inicio
+.................... #define led_paro PORTC,1//indicador de paro
+.................... 
+.................... ////////señales de control y comunicación//////
+.................... #define cos_der PORTC,2//señal para cosechar en la derecha
+.................... #define cos_izq PORTC,3// señal para cosechar en la izquierda
+.................... #define avanzar_x PORTC,4// señal para avanzar en x
+.................... #define terminado PORTC,5// señal que indica que el otro micro ha terminado su tarea
+.................... #define final_x PORTD, 4// señal que indica que se llego al final de x, o sea, al final del programa
+.................... 
+.................... ////////variables globales//////////////
+.................... 
+.................... int velocidad=5; //variable para la velocidad del motor, es una pausa
+.................... int8 sensores=0;// almacena la concatenacion de todos los sensores
+.................... ///////////interrupcion por el boton de paro//////////////////////////
+.................... 
+.................... #INT_EXT             //Funcion de la interrupcion
+.................... VOID INTERRUPCION()
+.................... {
+....................  portb=0b01001000;
+0044:  MOVLW  48
+0045:  MOVWF  06
+....................  while(!bit_test(inicio)){
+0046:  BTFSC  09.0
+0047:  GOTO   052
+....................  bit_clear(led_inicio);
+0048:  BCF    07.0
+....................  bit_set(led_paro);
+0049:  BSF    07.1
+....................  delay_ms(250);
+004A:  MOVLW  FA
+004B:  MOVWF  57
+004C:  CALL   02F
+....................  bit_clear(led_paro);
+004D:  BCF    07.1
+....................  delay_ms(250);
+004E:  MOVLW  FA
+004F:  MOVWF  57
+0050:  CALL   02F
+0051:  GOTO   046
+....................  }
+0052:  BCF    0B.1
+0053:  BCF    0A.3
+0054:  BCF    0A.4
+0055:  GOTO   01B
+.................... }
+.................... //////////////////////////////////////////////////////////////////////
+.................... void main(){
+*
+03A1:  MOVF   03,W
+03A2:  ANDLW  1F
+03A3:  MOVWF  03
+03A4:  MOVLW  61
+03A5:  BSF    03.5
+03A6:  MOVWF  0F
+03A7:  CLRF   10
+03A8:  MOVF   0F,W
+03A9:  MOVLW  05
+03AA:  BCF    03.5
+03AB:  MOVWF  28
+03AC:  CLRF   29
+03AD:  MOVLW  FF
+03AE:  MOVWF  2A
+03AF:  BSF    03.5
+03B0:  BSF    03.6
+03B1:  MOVF   09,W
+03B2:  ANDLW  C0
+03B3:  MOVWF  09
+03B4:  BCF    03.6
+03B5:  BCF    1F.4
+03B6:  BCF    1F.5
+03B7:  MOVLW  00
+03B8:  BSF    03.6
+03B9:  MOVWF  08
+03BA:  BCF    03.5
+03BB:  CLRF   07
+03BC:  CLRF   08
+03BD:  CLRF   09
+03BE:  BCF    03.7
+.................... set_tris_a(0b11111111); 
+03BF:  MOVLW  FF
+03C0:  BSF    03.5
+03C1:  BCF    03.6
+03C2:  MOVWF  05
+.................... set_tris_b(0b00000001);
+03C3:  MOVLW  01
+03C4:  MOVWF  06
+.................... set_tris_c(0b11100000);
+03C5:  MOVLW  E0
+03C6:  MOVWF  07
+03C7:  BCF    03.5
+03C8:  MOVWF  2A
+.................... set_tris_d(0b00111111);
+03C9:  MOVLW  3F
+03CA:  BSF    03.5
+03CB:  MOVWF  08
+.................... set_tris_e(0b1111);
+03CC:  BSF    09.0
+03CD:  BSF    09.1
+03CE:  BSF    09.2
+03CF:  BSF    09.3
+.................... portb=0b01001000;
+03D0:  MOVLW  48
+03D1:  BCF    03.5
+03D2:  MOVWF  06
+.................... portc=0;
+03D3:  CLRF   07
+.................... portd=0;
+03D4:  CLRF   08
+.................... ENABLE_INTERRUPTS(GLOBAL);    //Habilita todas las interrupciones
+03D5:  MOVLW  C0
+03D6:  IORWF  0B,F
+.................... ENABLE_INTERRUPTS(INT_EXT);   //Habilita la interrupción externa, entra en el pin RB0
+03D7:  BSF    0B.4
+.................... /////////////espera a presionar el botón de inicio/////
+.................... while(!bit_test(inicio)){
+03D8:  BTFSC  09.0
+03D9:  GOTO   3EF
+....................    bit_set(led_inicio);
+03DA:  BSF    07.0
+03DB:  CLRF   27
+03DC:  BTFSC  0B.7
+03DD:  BSF    27.7
+03DE:  BCF    0B.7
+....................    delay_ms(200);
+03DF:  MOVLW  C8
+03E0:  MOVWF  57
+03E1:  CALL   02F
+03E2:  BTFSC  27.7
+03E3:  BSF    0B.7
+....................    bit_clear(led_inicio);
+03E4:  BCF    07.0
+03E5:  CLRF   27
+03E6:  BTFSC  0B.7
+03E7:  BSF    27.7
+03E8:  BCF    0B.7
+....................    delay_ms(200);
+03E9:  MOVLW  C8
+03EA:  MOVWF  57
+03EB:  CALL   02F
+03EC:  BTFSC  27.7
+03ED:  BSF    0B.7
+03EE:  GOTO   3D8
+.................... }
+.................... bit_set(led_inicio);
+03EF:  BSF    07.0
+.................... arranque();//vamos a la funcion arranque
+03F0:  GOTO   056
+.................... /////////////bucle de trabajo///////////////////
+.................... while(true){
+.................... bit_set(led_inicio);
+03F1:  BSF    07.0
+.................... /////////////busqueda en el eje////////
+.................... eje_z();
+03F2:  GOTO   0E0
+03F3:  GOTO   3F1
+.................... 
+.................... 
+....................    }
+.................... }
+.................... void arranque(){
+03F4:  SLEEP
+.................... //aqui movemos los motores del eje z hasta el inicio de carrera
+....................    while(!bit_test(ls1)){// buscamos en el eje del Motor1
+*
+0056:  BTFSC  08.3
+0057:  GOTO   06F
+....................       bit_clear(en_z);
+0058:  BCF    06.3
+....................       bit_clear(dir_z); //vamos abajo
+0059:  BCF    06.2
+....................       bit_set(paso_z);
+005A:  BSF    06.1
+005B:  CLRF   27
+005C:  BTFSC  0B.7
+005D:  BSF    27.7
+005E:  BCF    0B.7
+....................       delay_ms(velocidad);
+005F:  MOVF   28,W
+0060:  MOVWF  57
+0061:  CALL   02F
+0062:  BTFSC  27.7
+0063:  BSF    0B.7
+....................       bit_clear(paso_z);
+0064:  BCF    06.1
+0065:  CLRF   27
+0066:  BTFSC  0B.7
+0067:  BSF    27.7
+0068:  BCF    0B.7
+....................       delay_ms(velocidad);
+0069:  MOVF   28,W
+006A:  MOVWF  57
+006B:  CALL   02F
+006C:  BTFSC  27.7
+006D:  BSF    0B.7
+006E:  GOTO   056
+....................    }
+....................    bit_set(en_z);
+006F:  BSF    06.3
+....................    while(!bit_test(ls3)){//buscamos en el eje del Motor 2 
+0070:  BTFSC  08.1
+0071:  GOTO   089
+....................       bit_clear(en_z1);
+0072:  BCF    06.6
+....................       bit_set(dir_z1); //vamos a la izquierda
+0073:  BSF    06.5
+....................       bit_set(paso_z1);
+0074:  BSF    06.4
+0075:  CLRF   27
+0076:  BTFSC  0B.7
+0077:  BSF    27.7
+0078:  BCF    0B.7
+....................       delay_ms(velocidad);
+0079:  MOVF   28,W
+007A:  MOVWF  57
+007B:  CALL   02F
+007C:  BTFSC  27.7
+007D:  BSF    0B.7
+....................       bit_clear(paso_z1);
+007E:  BCF    06.4
+007F:  CLRF   27
+0080:  BTFSC  0B.7
+0081:  BSF    27.7
+0082:  BCF    0B.7
+....................       delay_ms(velocidad);
+0083:  MOVF   28,W
+0084:  MOVWF  57
+0085:  CALL   02F
+0086:  BTFSC  27.7
+0087:  BSF    0B.7
+0088:  GOTO   070
+....................    }
+....................    bit_set(en_z1);
+0089:  BSF    06.6
+....................    while(!bit_test(ls5)){// buscamos en el Motor 3
+008A:  BTFSC  07.7
+008B:  GOTO   0A3
+....................       bit_clear(en_z2);
+008C:  BCF    08.6
+....................       bit_set(dir_z2); //vamos a la izquierda
+008D:  BSF    08.7
+....................       bit_set(paso_z2);
+008E:  BSF    06.7
+008F:  CLRF   27
+0090:  BTFSC  0B.7
+0091:  BSF    27.7
+0092:  BCF    0B.7
+....................       delay_ms(velocidad);
+0093:  MOVF   28,W
+0094:  MOVWF  57
+0095:  CALL   02F
+0096:  BTFSC  27.7
+0097:  BSF    0B.7
+....................       bit_clear(paso_z2);
+0098:  BCF    06.7
+0099:  CLRF   27
+009A:  BTFSC  0B.7
+009B:  BSF    27.7
+009C:  BCF    0B.7
+....................       delay_ms(velocidad);
+009D:  MOVF   28,W
+009E:  MOVWF  57
+009F:  CALL   02F
+00A0:  BTFSC  27.7
+00A1:  BSF    0B.7
+00A2:  GOTO   08A
+....................    }
+....................    bit_set(en_z2);
+00A3:  BSF    08.6
+00A4:  BCF    0A.3
+00A5:  BCF    0A.4
+00A6:  GOTO   3F1 (RETURN)
+.................... 
+.................... }
+.................... 
+.................... void eje_z(){
+.................... // aqui buscamos frutos maduros en el eje z, en caso de encontarlo posicionamos
+.................... // el mecanismo para cortarlo y enviamos el programa a la funcion para cortar el fruto.
+.................... while(!bit_test(ls2)){// mientras no lleguemos al final de carrera
+*
+00E0:  BTFSC  08.2
+00E1:  GOTO   26B
+....................       sensores=sensor8,sensor7,sensor6, sensor5, sensor4,sensor3,sensor2,sensor1;
+00E2:  MOVF   05,W
+00E3:  MOVWF  29
+....................    while(sensores==0 && !bit_test(ls2)){
+00E4:  MOVF   29,F
+00E5:  BTFSS  03.2
+00E6:  GOTO   102
+00E7:  BTFSC  08.2
+00E8:  GOTO   102
+....................       sensores=sensor8,sensor7,sensor6, sensor5, sensor4,sensor3,sensor2,sensor1;   
+00E9:  MOVF   05,W
+00EA:  MOVWF  29
+....................       bit_clear(en_z);
+00EB:  BCF    06.3
+....................       bit_set(dir_z);
+00EC:  BSF    06.2
+....................       bit_set(paso_z);
+00ED:  BSF    06.1
+00EE:  CLRF   27
+00EF:  BTFSC  0B.7
+00F0:  BSF    27.7
+00F1:  BCF    0B.7
+....................       delay_ms(velocidad);
+00F2:  MOVF   28,W
+00F3:  MOVWF  57
+00F4:  CALL   02F
+00F5:  BTFSC  27.7
+00F6:  BSF    0B.7
+....................       bit_clear(paso_z);
+00F7:  BCF    06.1
+00F8:  CLRF   27
+00F9:  BTFSC  0B.7
+00FA:  BSF    27.7
+00FB:  BCF    0B.7
+....................       delay_ms(velocidad);
+00FC:  MOVF   28,W
+00FD:  MOVWF  57
+00FE:  CALL   02F
+00FF:  BTFSC  27.7
+0100:  BSF    0B.7
+0101:  GOTO   0E4
+....................    }
+.................... /* para avanzar 1 mm son necesarios 25 pasos del motor*/   
+.................... ///////sensores del lado derecho///////////////////////   
+.................... if(bit_test(sensor1)){//vamos a la posicion del sensor
+0102:  BTFSS  05.0
+0103:  GOTO   12F
+....................    for(int16 i=0; i<1;i++){
+0104:  CLRF   2C
+0105:  CLRF   2B
+0106:  MOVF   2B,F
+0107:  BTFSS  03.2
+0108:  GOTO   12D
+0109:  MOVF   2C,F
+010A:  BTFSS  03.2
+010B:  GOTO   12D
+....................               for(int i=0; i<25;i++){
+010C:  CLRF   2D
+010D:  MOVF   2D,W
+010E:  SUBLW  18
+010F:  BTFSS  03.0
+0110:  GOTO   129
+....................                bit_clear(en_z1);
+0111:  BCF    06.6
+....................                bit_clear(dir_z1);
+0112:  BCF    06.5
+....................                bit_set(paso_z1);
+0113:  BSF    06.4
+0114:  CLRF   27
+0115:  BTFSC  0B.7
+0116:  BSF    27.7
+0117:  BCF    0B.7
+....................                delay_ms(velocidad);
+0118:  MOVF   28,W
+0119:  MOVWF  57
+011A:  CALL   02F
+011B:  BTFSC  27.7
+011C:  BSF    0B.7
+....................                bit_clear(paso_z1);
+011D:  BCF    06.4
+011E:  CLRF   27
+011F:  BTFSC  0B.7
+0120:  BSF    27.7
+0121:  BCF    0B.7
+....................                delay_ms(velocidad);
+0122:  MOVF   28,W
+0123:  MOVWF  57
+0124:  CALL   02F
+0125:  BTFSC  27.7
+0126:  BSF    0B.7
+0127:  INCF   2D,F
+0128:  GOTO   10D
+....................              }
+0129:  INCF   2B,F
+012A:  BTFSC  03.2
+012B:  INCF   2C,F
+012C:  GOTO   106
+....................             }
+....................             bit_set(en_z1);
+012D:  BSF    06.6
+....................       cosechar_der();
+012E:  CALL   0A7
+....................    }
+.................... if(bit_test(sensor2)){//vamos a la posicion del sensor
+012F:  BTFSS  05.1
+0130:  GOTO   15C
+....................    for(int16 i=0; i<1;i++){
+0131:  CLRF   2F
+0132:  CLRF   2E
+0133:  MOVF   2E,F
+0134:  BTFSS  03.2
+0135:  GOTO   15A
+0136:  MOVF   2F,F
+0137:  BTFSS  03.2
+0138:  GOTO   15A
+....................               for(int i=0; i<25;i++){
+0139:  CLRF   30
+013A:  MOVF   30,W
+013B:  SUBLW  18
+013C:  BTFSS  03.0
+013D:  GOTO   156
+....................                bit_clear(en_z1);
+013E:  BCF    06.6
+....................                bit_clear(dir_z1);
+013F:  BCF    06.5
+....................                bit_set(paso_z1);
+0140:  BSF    06.4
+0141:  CLRF   27
+0142:  BTFSC  0B.7
+0143:  BSF    27.7
+0144:  BCF    0B.7
+....................                delay_ms(velocidad);
+0145:  MOVF   28,W
+0146:  MOVWF  57
+0147:  CALL   02F
+0148:  BTFSC  27.7
+0149:  BSF    0B.7
+....................                bit_clear(paso_z1);
+014A:  BCF    06.4
+014B:  CLRF   27
+014C:  BTFSC  0B.7
+014D:  BSF    27.7
+014E:  BCF    0B.7
+....................                delay_ms(velocidad);
+014F:  MOVF   28,W
+0150:  MOVWF  57
+0151:  CALL   02F
+0152:  BTFSC  27.7
+0153:  BSF    0B.7
+0154:  INCF   30,F
+0155:  GOTO   13A
+....................              }
+0156:  INCF   2E,F
+0157:  BTFSC  03.2
+0158:  INCF   2F,F
+0159:  GOTO   133
+....................             }
+....................             bit_set(en_z1);
+015A:  BSF    06.6
+....................       cosechar_der();
+015B:  CALL   0A7
+....................    }
+.................... if(bit_test(sensor3)){//vamos a la posicion del sensor
+015C:  BTFSS  05.2
+015D:  GOTO   189
+....................    for(int16 i=0; i<1;i++){
+015E:  CLRF   32
+015F:  CLRF   31
+0160:  MOVF   31,F
+0161:  BTFSS  03.2
+0162:  GOTO   187
+0163:  MOVF   32,F
+0164:  BTFSS  03.2
+0165:  GOTO   187
+....................               for(int i=0; i<25;i++){
+0166:  CLRF   33
+0167:  MOVF   33,W
+0168:  SUBLW  18
+0169:  BTFSS  03.0
+016A:  GOTO   183
+....................                bit_clear(en_z1);
+016B:  BCF    06.6
+....................                bit_clear(dir_z1);
+016C:  BCF    06.5
+....................                bit_set(paso_z1);
+016D:  BSF    06.4
+016E:  CLRF   27
+016F:  BTFSC  0B.7
+0170:  BSF    27.7
+0171:  BCF    0B.7
+....................                delay_ms(velocidad);
+0172:  MOVF   28,W
+0173:  MOVWF  57
+0174:  CALL   02F
+0175:  BTFSC  27.7
+0176:  BSF    0B.7
+....................                bit_clear(paso_z1);
+0177:  BCF    06.4
+0178:  CLRF   27
+0179:  BTFSC  0B.7
+017A:  BSF    27.7
+017B:  BCF    0B.7
+....................                delay_ms(velocidad);
+017C:  MOVF   28,W
+017D:  MOVWF  57
+017E:  CALL   02F
+017F:  BTFSC  27.7
+0180:  BSF    0B.7
+0181:  INCF   33,F
+0182:  GOTO   167
+....................              }
+0183:  INCF   31,F
+0184:  BTFSC  03.2
+0185:  INCF   32,F
+0186:  GOTO   160
+....................             }
+....................             bit_set(en_z1);
+0187:  BSF    06.6
+....................       cosechar_der();
+0188:  CALL   0A7
+....................    }
+.................... 
+.................... 
+.................... if(bit_test(sensor4)){//vamos a la posicion del sensor
+0189:  BTFSS  05.3
+018A:  GOTO   1B6
+....................    for(int16 i=0; i<1;i++){
+018B:  CLRF   35
+018C:  CLRF   34
+018D:  MOVF   34,F
+018E:  BTFSS  03.2
+018F:  GOTO   1B4
+0190:  MOVF   35,F
+0191:  BTFSS  03.2
+0192:  GOTO   1B4
+....................               for(int i=0; i<25;i++){
+0193:  CLRF   36
+0194:  MOVF   36,W
+0195:  SUBLW  18
+0196:  BTFSS  03.0
+0197:  GOTO   1B0
+....................                bit_clear(en_z1);
+0198:  BCF    06.6
+....................                bit_clear(dir_z1);
+0199:  BCF    06.5
+....................                bit_set(paso_z1);
+019A:  BSF    06.4
+019B:  CLRF   27
+019C:  BTFSC  0B.7
+019D:  BSF    27.7
+019E:  BCF    0B.7
+....................                delay_ms(velocidad);
+019F:  MOVF   28,W
+01A0:  MOVWF  57
+01A1:  CALL   02F
+01A2:  BTFSC  27.7
+01A3:  BSF    0B.7
+....................                bit_clear(paso_z1);
+01A4:  BCF    06.4
+01A5:  CLRF   27
+01A6:  BTFSC  0B.7
+01A7:  BSF    27.7
+01A8:  BCF    0B.7
+....................                delay_ms(velocidad);
+01A9:  MOVF   28,W
+01AA:  MOVWF  57
+01AB:  CALL   02F
+01AC:  BTFSC  27.7
+01AD:  BSF    0B.7
+01AE:  INCF   36,F
+01AF:  GOTO   194
+....................              }
+01B0:  INCF   34,F
+01B1:  BTFSC  03.2
+01B2:  INCF   35,F
+01B3:  GOTO   18D
+....................             }
+....................             bit_set(en_z1);
+01B4:  BSF    06.6
+....................       cosechar_der();
+01B5:  CALL   0A7
+....................    } 
+....................  /////////sensores izquierda///////////////////////  
+.................... if(bit_test(sensor5)){//vamos a la posicion del sensor
+01B6:  BTFSS  05.4
+01B7:  GOTO   1E3
+....................    for(int16 i=0; i<1;i++){
+01B8:  CLRF   38
+01B9:  CLRF   37
+01BA:  MOVF   37,F
+01BB:  BTFSS  03.2
+01BC:  GOTO   1E1
+01BD:  MOVF   38,F
+01BE:  BTFSS  03.2
+01BF:  GOTO   1E1
+....................               for(int i=0; i<25;i++){
+01C0:  CLRF   39
+01C1:  MOVF   39,W
+01C2:  SUBLW  18
+01C3:  BTFSS  03.0
+01C4:  GOTO   1DD
+....................                bit_clear(en_z2);
+01C5:  BCF    08.6
+....................                bit_clear(dir_z2);
+01C6:  BCF    08.7
+....................                bit_set(paso_z2);
+01C7:  BSF    06.7
+01C8:  CLRF   27
+01C9:  BTFSC  0B.7
+01CA:  BSF    27.7
+01CB:  BCF    0B.7
+....................                delay_ms(velocidad);
+01CC:  MOVF   28,W
+01CD:  MOVWF  57
+01CE:  CALL   02F
+01CF:  BTFSC  27.7
+01D0:  BSF    0B.7
+....................                bit_clear(paso_z2);
+01D1:  BCF    06.7
+01D2:  CLRF   27
+01D3:  BTFSC  0B.7
+01D4:  BSF    27.7
+01D5:  BCF    0B.7
+....................                delay_ms(velocidad);
+01D6:  MOVF   28,W
+01D7:  MOVWF  57
+01D8:  CALL   02F
+01D9:  BTFSC  27.7
+01DA:  BSF    0B.7
+01DB:  INCF   39,F
+01DC:  GOTO   1C1
+....................              }
+01DD:  INCF   37,F
+01DE:  BTFSC  03.2
+01DF:  INCF   38,F
+01E0:  GOTO   1BA
+....................             }
+....................             bit_set(en_z2);
+01E1:  BSF    08.6
+....................       cosechar_izq();
+01E2:  CALL   0AE
+....................    }    
+.................... if(bit_test(sensor6)){//vamos a la posicion del sensor
+01E3:  BTFSS  05.5
+01E4:  GOTO   210
+....................    for(int16 i=0; i<1;i++){
+01E5:  CLRF   3B
+01E6:  CLRF   3A
+01E7:  MOVF   3A,F
+01E8:  BTFSS  03.2
+01E9:  GOTO   20E
+01EA:  MOVF   3B,F
+01EB:  BTFSS  03.2
+01EC:  GOTO   20E
+....................               for(int i=0; i<25;i++){
+01ED:  CLRF   3C
+01EE:  MOVF   3C,W
+01EF:  SUBLW  18
+01F0:  BTFSS  03.0
+01F1:  GOTO   20A
+....................                bit_clear(en_z2);
+01F2:  BCF    08.6
+....................                bit_clear(dir_z2);
+01F3:  BCF    08.7
+....................                bit_set(paso_z2);
+01F4:  BSF    06.7
+01F5:  CLRF   27
+01F6:  BTFSC  0B.7
+01F7:  BSF    27.7
+01F8:  BCF    0B.7
+....................                delay_ms(velocidad);
+01F9:  MOVF   28,W
+01FA:  MOVWF  57
+01FB:  CALL   02F
+01FC:  BTFSC  27.7
+01FD:  BSF    0B.7
+....................                bit_clear(paso_z2);
+01FE:  BCF    06.7
+01FF:  CLRF   27
+0200:  BTFSC  0B.7
+0201:  BSF    27.7
+0202:  BCF    0B.7
+....................                delay_ms(velocidad);
+0203:  MOVF   28,W
+0204:  MOVWF  57
+0205:  CALL   02F
+0206:  BTFSC  27.7
+0207:  BSF    0B.7
+0208:  INCF   3C,F
+0209:  GOTO   1EE
+....................              }
+020A:  INCF   3A,F
+020B:  BTFSC  03.2
+020C:  INCF   3B,F
+020D:  GOTO   1E7
+....................             }
+....................             bit_set(en_z2);
+020E:  BSF    08.6
+....................       cosechar_izq();
+020F:  CALL   0AE
+....................    }
+.................... if(bit_test(sensor7)){//vamos a la posicion del sensor
+0210:  BTFSS  05.6
+0211:  GOTO   23D
+....................    for(int16 i=0; i<1;i++){
+0212:  CLRF   3E
+0213:  CLRF   3D
+0214:  MOVF   3D,F
+0215:  BTFSS  03.2
+0216:  GOTO   23B
+0217:  MOVF   3E,F
+0218:  BTFSS  03.2
+0219:  GOTO   23B
+....................               for(int i=0; i<25;i++){
+021A:  CLRF   3F
+021B:  MOVF   3F,W
+021C:  SUBLW  18
+021D:  BTFSS  03.0
+021E:  GOTO   237
+....................                bit_clear(en_z2);
+021F:  BCF    08.6
+....................                bit_clear(dir_z2);
+0220:  BCF    08.7
+....................                bit_set(paso_z2);
+0221:  BSF    06.7
+0222:  CLRF   27
+0223:  BTFSC  0B.7
+0224:  BSF    27.7
+0225:  BCF    0B.7
+....................                delay_ms(velocidad);
+0226:  MOVF   28,W
+0227:  MOVWF  57
+0228:  CALL   02F
+0229:  BTFSC  27.7
+022A:  BSF    0B.7
+....................                bit_clear(paso_z2);
+022B:  BCF    06.7
+022C:  CLRF   27
+022D:  BTFSC  0B.7
+022E:  BSF    27.7
+022F:  BCF    0B.7
+....................                delay_ms(velocidad);
+0230:  MOVF   28,W
+0231:  MOVWF  57
+0232:  CALL   02F
+0233:  BTFSC  27.7
+0234:  BSF    0B.7
+0235:  INCF   3F,F
+0236:  GOTO   21B
+....................              }
+0237:  INCF   3D,F
+0238:  BTFSC  03.2
+0239:  INCF   3E,F
+023A:  GOTO   214
+....................             }
+....................             bit_set(en_z2);
+023B:  BSF    08.6
+....................       cosechar_izq();
+023C:  CALL   0AE
+....................    }
+.................... if(bit_test(sensor8)){//vamos a la posicion del sensor
+023D:  BTFSS  05.7
+023E:  GOTO   26A
+....................    for(int16 i=0; i<1;i++){
+023F:  CLRF   41
+0240:  CLRF   40
+0241:  MOVF   40,F
+0242:  BTFSS  03.2
+0243:  GOTO   268
+0244:  MOVF   41,F
+0245:  BTFSS  03.2
+0246:  GOTO   268
+....................               for(int i=0; i<25;i++){
+0247:  CLRF   42
+0248:  MOVF   42,W
+0249:  SUBLW  18
+024A:  BTFSS  03.0
+024B:  GOTO   264
+....................                bit_clear(en_z2);
+024C:  BCF    08.6
+....................                bit_clear(dir_z2);
+024D:  BCF    08.7
+....................                bit_set(paso_z2);
+024E:  BSF    06.7
+024F:  CLRF   27
+0250:  BTFSC  0B.7
+0251:  BSF    27.7
+0252:  BCF    0B.7
+....................                delay_ms(velocidad);
+0253:  MOVF   28,W
+0254:  MOVWF  57
+0255:  CALL   02F
+0256:  BTFSC  27.7
+0257:  BSF    0B.7
+....................                bit_clear(paso_z2);
+0258:  BCF    06.7
+0259:  CLRF   27
+025A:  BTFSC  0B.7
+025B:  BSF    27.7
+025C:  BCF    0B.7
+....................                delay_ms(velocidad);
+025D:  MOVF   28,W
+025E:  MOVWF  57
+025F:  CALL   02F
+0260:  BTFSC  27.7
+0261:  BSF    0B.7
+0262:  INCF   42,F
+0263:  GOTO   248
+....................              }
+0264:  INCF   40,F
+0265:  BTFSC  03.2
+0266:  INCF   41,F
+0267:  GOTO   241
+....................             }
+....................             bit_set(en_z2);
+0268:  BSF    08.6
+....................       cosechar_izq();
+0269:  CALL   0AE
+....................    }   
+026A:  GOTO   0E0
+....................   
+.................... //////////////////////////////////////////////////
+....................  
+.................... }
+.................... // en caso de que lleguemos al final de carrera avanzamos en el eje x
+.................... eje_x();
+026B:  CALL   0B5
+.................... // aqui buscamos frutos maduros en el eje z hacia abajo, en caso de encontarlo posicionamos
+.................... // el mecanismo para cortarlo y enviamos el programa a la funcion para cortar el fruto.
+.................... while(!bit_test(ls1)){// mientras no lleguemos al final de carrera
+026C:  BTFSC  08.3
+026D:  GOTO   39D
+....................       sensores=sensor6, sensor5, sensor4,sensor3,sensor2,sensor1;
+026E:  MOVF   05,W
+026F:  MOVWF  29
+....................    while(sensores==0 && !bit_test(ls1)){
+0270:  MOVF   29,F
+0271:  BTFSS  03.2
+0272:  GOTO   28E
+0273:  BTFSC  08.3
+0274:  GOTO   28E
+....................       sensores=sensor6, sensor5, sensor4,sensor3,sensor2,sensor1;   
+0275:  MOVF   05,W
+0276:  MOVWF  29
+....................       bit_clear(en_z);
+0277:  BCF    06.3
+....................       bit_clear(dir_z);
+0278:  BCF    06.2
+....................       bit_set(paso_z);
+0279:  BSF    06.1
+027A:  CLRF   27
+027B:  BTFSC  0B.7
+027C:  BSF    27.7
+027D:  BCF    0B.7
+....................       delay_ms(velocidad);
+027E:  MOVF   28,W
+027F:  MOVWF  57
+0280:  CALL   02F
+0281:  BTFSC  27.7
+0282:  BSF    0B.7
+....................       bit_clear(paso_z);
+0283:  BCF    06.1
+0284:  CLRF   27
+0285:  BTFSC  0B.7
+0286:  BSF    27.7
+0287:  BCF    0B.7
+....................       delay_ms(velocidad);
+0288:  MOVF   28,W
+0289:  MOVWF  57
+028A:  CALL   02F
+028B:  BTFSC  27.7
+028C:  BSF    0B.7
+028D:  GOTO   270
+....................    }
+.................... /* para avanzar 1 mm son necesarios 25 pasos del motor*/   
+.................... ///////sensores del lado derecho///////////////////////   
+.................... if(bit_test(sensor1)){//vamos a la posicion del sensor
+028E:  BTFSS  05.0
+028F:  GOTO   2BB
+....................    for(int16 i=0; i<1;i++){
+0290:  CLRF   44
+0291:  CLRF   43
+0292:  MOVF   43,F
+0293:  BTFSS  03.2
+0294:  GOTO   2B9
+0295:  MOVF   44,F
+0296:  BTFSS  03.2
+0297:  GOTO   2B9
+....................               for(int i=0; i<25;i++){
+0298:  CLRF   45
+0299:  MOVF   45,W
+029A:  SUBLW  18
+029B:  BTFSS  03.0
+029C:  GOTO   2B5
+....................                bit_clear(en_z1);
+029D:  BCF    06.6
+....................                bit_clear(dir_z1);
+029E:  BCF    06.5
+....................                bit_set(paso_z1);
+029F:  BSF    06.4
+02A0:  CLRF   27
+02A1:  BTFSC  0B.7
+02A2:  BSF    27.7
+02A3:  BCF    0B.7
+....................                delay_ms(velocidad);
+02A4:  MOVF   28,W
+02A5:  MOVWF  57
+02A6:  CALL   02F
+02A7:  BTFSC  27.7
+02A8:  BSF    0B.7
+....................                bit_clear(paso_z1);
+02A9:  BCF    06.4
+02AA:  CLRF   27
+02AB:  BTFSC  0B.7
+02AC:  BSF    27.7
+02AD:  BCF    0B.7
+....................                delay_ms(velocidad);
+02AE:  MOVF   28,W
+02AF:  MOVWF  57
+02B0:  CALL   02F
+02B1:  BTFSC  27.7
+02B2:  BSF    0B.7
+02B3:  INCF   45,F
+02B4:  GOTO   299
+....................              }
+02B5:  INCF   43,F
+02B6:  BTFSC  03.2
+02B7:  INCF   44,F
+02B8:  GOTO   292
+....................             }
+....................             bit_set(en_z1);
+02B9:  BSF    06.6
+....................       cosechar_der();
+02BA:  CALL   0A7
+....................    }
+.................... if(bit_test(sensor2)){//vamos a la posicion del sensor
+02BB:  BTFSS  05.1
+02BC:  GOTO   2E8
+....................    for(int16 i=0; i<1;i++){
+02BD:  CLRF   47
+02BE:  CLRF   46
+02BF:  MOVF   46,F
+02C0:  BTFSS  03.2
+02C1:  GOTO   2E6
+02C2:  MOVF   47,F
+02C3:  BTFSS  03.2
+02C4:  GOTO   2E6
+....................               for(int i=0; i<25;i++){
+02C5:  CLRF   48
+02C6:  MOVF   48,W
+02C7:  SUBLW  18
+02C8:  BTFSS  03.0
+02C9:  GOTO   2E2
+....................                bit_clear(en_z1);
+02CA:  BCF    06.6
+....................                bit_clear(dir_z1);
+02CB:  BCF    06.5
+....................                bit_set(paso_z1);
+02CC:  BSF    06.4
+02CD:  CLRF   27
+02CE:  BTFSC  0B.7
+02CF:  BSF    27.7
+02D0:  BCF    0B.7
+....................                delay_ms(velocidad);
+02D1:  MOVF   28,W
+02D2:  MOVWF  57
+02D3:  CALL   02F
+02D4:  BTFSC  27.7
+02D5:  BSF    0B.7
+....................                bit_clear(paso_z1);
+02D6:  BCF    06.4
+02D7:  CLRF   27
+02D8:  BTFSC  0B.7
+02D9:  BSF    27.7
+02DA:  BCF    0B.7
+....................                delay_ms(velocidad);
+02DB:  MOVF   28,W
+02DC:  MOVWF  57
+02DD:  CALL   02F
+02DE:  BTFSC  27.7
+02DF:  BSF    0B.7
+02E0:  INCF   48,F
+02E1:  GOTO   2C6
+....................              }
+02E2:  INCF   46,F
+02E3:  BTFSC  03.2
+02E4:  INCF   47,F
+02E5:  GOTO   2BF
+....................             }
+....................             bit_set(en_z1);
+02E6:  BSF    06.6
+....................       cosechar_der();
+02E7:  CALL   0A7
+....................    }
+.................... if(bit_test(sensor3)){//vamos a la posicion del sensor
+02E8:  BTFSS  05.2
+02E9:  GOTO   315
+....................    for(int16 i=0; i<1;i++){
+02EA:  CLRF   4A
+02EB:  CLRF   49
+02EC:  MOVF   49,F
+02ED:  BTFSS  03.2
+02EE:  GOTO   313
+02EF:  MOVF   4A,F
+02F0:  BTFSS  03.2
+02F1:  GOTO   313
+....................               for(int i=0; i<25;i++){
+02F2:  CLRF   4B
+02F3:  MOVF   4B,W
+02F4:  SUBLW  18
+02F5:  BTFSS  03.0
+02F6:  GOTO   30F
+....................                bit_clear(en_z1);
+02F7:  BCF    06.6
+....................                bit_clear(dir_z1);
+02F8:  BCF    06.5
+....................                bit_set(paso_z1);
+02F9:  BSF    06.4
+02FA:  CLRF   27
+02FB:  BTFSC  0B.7
+02FC:  BSF    27.7
+02FD:  BCF    0B.7
+....................                delay_ms(velocidad);
+02FE:  MOVF   28,W
+02FF:  MOVWF  57
+0300:  CALL   02F
+0301:  BTFSC  27.7
+0302:  BSF    0B.7
+....................                bit_clear(paso_z1);
+0303:  BCF    06.4
+0304:  CLRF   27
+0305:  BTFSC  0B.7
+0306:  BSF    27.7
+0307:  BCF    0B.7
+....................                delay_ms(velocidad);
+0308:  MOVF   28,W
+0309:  MOVWF  57
+030A:  CALL   02F
+030B:  BTFSC  27.7
+030C:  BSF    0B.7
+030D:  INCF   4B,F
+030E:  GOTO   2F3
+....................              }
+030F:  INCF   49,F
+0310:  BTFSC  03.2
+0311:  INCF   4A,F
+0312:  GOTO   2EC
+....................             }
+....................             bit_set(en_z1);
+0313:  BSF    06.6
+....................       cosechar_der();
+0314:  CALL   0A7
+....................    }
+.................... 
+.................... /////////sensores izquierda///////////////////////
+.................... if(bit_test(sensor4)){//vamos a la posicion del sensor
+0315:  BTFSS  05.3
+0316:  GOTO   342
+....................    for(int16 i=0; i<1;i++){
+0317:  CLRF   4D
+0318:  CLRF   4C
+0319:  MOVF   4C,F
+031A:  BTFSS  03.2
+031B:  GOTO   340
+031C:  MOVF   4D,F
+031D:  BTFSS  03.2
+031E:  GOTO   340
+....................               for(int i=0; i<25;i++){
+031F:  CLRF   4E
+0320:  MOVF   4E,W
+0321:  SUBLW  18
+0322:  BTFSS  03.0
+0323:  GOTO   33C
+....................                bit_clear(en_z2);
+0324:  BCF    08.6
+....................                bit_clear(dir_z2);
+0325:  BCF    08.7
+....................                bit_set(paso_z2);
+0326:  BSF    06.7
+0327:  CLRF   27
+0328:  BTFSC  0B.7
+0329:  BSF    27.7
+032A:  BCF    0B.7
+....................                delay_ms(velocidad);
+032B:  MOVF   28,W
+032C:  MOVWF  57
+032D:  CALL   02F
+032E:  BTFSC  27.7
+032F:  BSF    0B.7
+....................                bit_clear(paso_z2);
+0330:  BCF    06.7
+0331:  CLRF   27
+0332:  BTFSC  0B.7
+0333:  BSF    27.7
+0334:  BCF    0B.7
+....................                delay_ms(velocidad);
+0335:  MOVF   28,W
+0336:  MOVWF  57
+0337:  CALL   02F
+0338:  BTFSC  27.7
+0339:  BSF    0B.7
+033A:  INCF   4E,F
+033B:  GOTO   320
+....................              }
+033C:  INCF   4C,F
+033D:  BTFSC  03.2
+033E:  INCF   4D,F
+033F:  GOTO   319
+....................             }
+....................             bit_set(en_z2);
+0340:  BSF    08.6
+....................       cosechar_izq();
+0341:  CALL   0AE
+....................    } 
+.................... if(bit_test(sensor5)){//vamos a la posicion del sensor
+0342:  BTFSS  05.4
+0343:  GOTO   36F
+....................    for(int16 i=0; i<1;i++){
+0344:  CLRF   50
+0345:  CLRF   4F
+0346:  MOVF   4F,F
+0347:  BTFSS  03.2
+0348:  GOTO   36D
+0349:  MOVF   50,F
+034A:  BTFSS  03.2
+034B:  GOTO   36D
+....................               for(int i=0; i<25;i++){
+034C:  CLRF   51
+034D:  MOVF   51,W
+034E:  SUBLW  18
+034F:  BTFSS  03.0
+0350:  GOTO   369
+....................                bit_clear(en_z2);
+0351:  BCF    08.6
+....................                bit_clear(dir_z2);
+0352:  BCF    08.7
+....................                bit_set(paso_z2);
+0353:  BSF    06.7
+0354:  CLRF   27
+0355:  BTFSC  0B.7
+0356:  BSF    27.7
+0357:  BCF    0B.7
+....................                delay_ms(velocidad);
+0358:  MOVF   28,W
+0359:  MOVWF  57
+035A:  CALL   02F
+035B:  BTFSC  27.7
+035C:  BSF    0B.7
+....................                bit_clear(paso_z2);
+035D:  BCF    06.7
+035E:  CLRF   27
+035F:  BTFSC  0B.7
+0360:  BSF    27.7
+0361:  BCF    0B.7
+....................                delay_ms(velocidad);
+0362:  MOVF   28,W
+0363:  MOVWF  57
+0364:  CALL   02F
+0365:  BTFSC  27.7
+0366:  BSF    0B.7
+0367:  INCF   51,F
+0368:  GOTO   34D
+....................              }
+0369:  INCF   4F,F
+036A:  BTFSC  03.2
+036B:  INCF   50,F
+036C:  GOTO   346
+....................             }
+....................             bit_set(en_z2);
+036D:  BSF    08.6
+....................       cosechar_izq();
+036E:  CALL   0AE
+....................    }    
+.................... if(bit_test(sensor6)){//vamos a la posicion del sensor
+036F:  BTFSS  05.5
+0370:  GOTO   39C
+....................    for(int16 i=0; i<1;i++){
+0371:  CLRF   53
+0372:  CLRF   52
+0373:  MOVF   52,F
+0374:  BTFSS  03.2
+0375:  GOTO   39A
+0376:  MOVF   53,F
+0377:  BTFSS  03.2
+0378:  GOTO   39A
+....................               for(int i=0; i<25;i++){
+0379:  CLRF   54
+037A:  MOVF   54,W
+037B:  SUBLW  18
+037C:  BTFSS  03.0
+037D:  GOTO   396
+....................                bit_clear(en_z2);
+037E:  BCF    08.6
+....................                bit_clear(dir_z2);
+037F:  BCF    08.7
+....................                bit_set(paso_z2);
+0380:  BSF    06.7
+0381:  CLRF   27
+0382:  BTFSC  0B.7
+0383:  BSF    27.7
+0384:  BCF    0B.7
+....................                delay_ms(velocidad);
+0385:  MOVF   28,W
+0386:  MOVWF  57
+0387:  CALL   02F
+0388:  BTFSC  27.7
+0389:  BSF    0B.7
+....................                bit_clear(paso_z2);
+038A:  BCF    06.7
+038B:  CLRF   27
+038C:  BTFSC  0B.7
+038D:  BSF    27.7
+038E:  BCF    0B.7
+....................                delay_ms(velocidad);
+038F:  MOVF   28,W
+0390:  MOVWF  57
+0391:  CALL   02F
+0392:  BTFSC  27.7
+0393:  BSF    0B.7
+0394:  INCF   54,F
+0395:  GOTO   37A
+....................              }
+0396:  INCF   52,F
+0397:  BTFSC  03.2
+0398:  INCF   53,F
+0399:  GOTO   373
+....................             }
+....................             bit_set(en_z2);
+039A:  BSF    08.6
+....................       cosechar_izq();
+039B:  CALL   0AE
+....................    }    
+039C:  GOTO   26C
+.................... //////////////////////////////////////////////////
+....................  
+.................... }
+.................... // en caso de que lleguemos al final de carrera avanzamos en el eje x
+.................... eje_x();
+039D:  CALL   0B5
+039E:  BCF    0A.3
+039F:  BCF    0A.4
+03A0:  GOTO   3F3 (RETURN)
+.................... }
+.................... 
+.................... void cosechar_der(){
+.................... // aqui cosechamos del lado derecho, enviamos la señal al otro micro y esperamos la indicación de terminado, luego continuamos
+....................    bit_set(cos_der);
+*
+00A7:  BSF    07.2
+....................    while(!bit_test(terminado)){// esperamos la señal de terminado
+00A8:  BTFSC  07.5
+00A9:  GOTO   0AC
+....................    bit_set(cos_der);
+00AA:  BSF    07.2
+00AB:  GOTO   0A8
+....................    }
+....................    bit_clear(cos_der);
+00AC:  BCF    07.2
+00AD:  RETURN
+....................    // ahora solo continuamos con el código
+.................... }
+.................... 
+.................... void cosechar_izq(){
+.................... // aqui cosechamos del lado izquierdo, enviamos la señal al otro micro y esperamos la indicación de terminado, luego continuamos
+....................    bit_set(cos_izq);
+00AE:  BSF    07.3
+....................    while(!bit_test(terminado)){// esperamos la señal de terminado
+00AF:  BTFSC  07.5
+00B0:  GOTO   0B3
+....................    bit_set(cos_izq);
+00B1:  BSF    07.3
+00B2:  GOTO   0AF
+....................    }
+....................    bit_clear(cos_izq);// continuamos con el programa
+00B3:  BCF    07.3
+00B4:  RETURN
+.................... }
+.................... 
+.................... void eje_x(){
+.................... // aqui le decimos al otro micro que avance en x, por defecto avanzará 18 cm
+....................    bit_set(avanzar_x);
+00B5:  BSF    07.4
+....................    while(!bit_test(terminado) && !bit_test(final_x)){
+00B6:  BTFSC  07.5
+00B7:  GOTO   0BC
+00B8:  BTFSC  08.4
+00B9:  GOTO   0BC
+....................    bit_set(avanzar_x);
+00BA:  BSF    07.4
+00BB:  GOTO   0B6
+....................    }
+....................   if(bit_test(final_x)){// si llegamos al final de carrera mandamos al void final
+00BC:  BTFSS  08.4
+00BD:  GOTO   0DE
+....................       final();
+....................    }else{
+*
+00DD:  GOTO   0DF
+....................       bit_clear(avanzar_x);
+00DE:  BCF    07.4
+....................    }
+00DF:  RETURN
+.................... }
+.................... 
+.................... void final(){
+.................... // en esta funcion solo esperamos a que el usuario apague y vuelva a encender el equipo luego de posicionarlo para hacer una nueva cosecha 
+....................    while(true){
+....................       bit_set(led_inicio);
+*
+00BE:  BSF    07.0
+....................       bit_set(led_paro);
+00BF:  BSF    07.1
+....................       delay_ms(500);
+00C0:  MOVLW  02
+00C1:  MOVWF  55
+00C2:  CLRF   27
+00C3:  BTFSC  0B.7
+00C4:  BSF    27.7
+00C5:  BCF    0B.7
+00C6:  MOVLW  FA
+00C7:  MOVWF  57
+00C8:  CALL   02F
+00C9:  BTFSC  27.7
+00CA:  BSF    0B.7
+00CB:  DECFSZ 55,F
+00CC:  GOTO   0C2
+....................       bit_clear(led_inicio);
+00CD:  BCF    07.0
+....................       bit_clear(led_paro);
+00CE:  BCF    07.1
+....................       delay_ms(500);
+00CF:  MOVLW  02
+00D0:  MOVWF  55
+00D1:  CLRF   27
+00D2:  BTFSC  0B.7
+00D3:  BSF    27.7
+00D4:  BCF    0B.7
+00D5:  MOVLW  FA
+00D6:  MOVWF  57
+00D7:  CALL   02F
+00D8:  BTFSC  27.7
+00D9:  BSF    0B.7
+00DA:  DECFSZ 55,F
+00DB:  GOTO   0D1
+00DC:  GOTO   0BE
+....................    }
+.................... }
+
+Configuration Fuses:
+   Word  1: 2FA4   INTRC_IO NOWDT PUT MCLR PROTECT NOCPD BROWNOUT IESO FCMEN NOLVP NODEBUG
+   Word  2: 3FFF   BORV40 NOWRT

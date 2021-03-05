@@ -1,0 +1,97 @@
+[PROJECT]
+Target=GYSA.hex
+Processor_Text=PIC16F887
+CCSVersion=5.091
+Compiler=PCM
+[Target Data]
+FileList=GYSA.c
+[GYSA.c]
+Type=4
+[mru-list]
+1=GYSA.c
+
+[defines]
+buildcount=47
+
+[ProjectLog]
+Days=3
+D1=02-03-2021
+D1_L=22
+D1_L1=[54347]Stopped Editing.
+D1_L2=[54515]Started Editing.
+D1_L3=[54815]Stopped Editing.
+D1_L4=[61719]Started Editing.
+D1_L5=[62273]Stopped Editing.
+D1_L6=[66128]Started Editing.
+D1_L7=[67043]Stopped Editing.
+D1_L8=[67333]Started Editing.
+D1_L9=[68198]Stopped Editing.
+D1_L10=[69495]Started Editing.
+D1_L11=[70251]Stopped Editing.
+D1_L12=[70899]Started Editing.
+D1_L13=[72268]Stopped Editing.
+D1_L14=[73184]Started Editing.
+D1_L15=[75258]Stopped Editing.
+D1_L16=[75275]Started Editing.
+D1_L17=[77224]Stopped Editing.
+D1_L18=[78050]Started Editing.
+D1_L19=[78841]Stopped Editing.
+D1_L20=[79020]Started Editing.
+D1_L21=[80024]Stopped Editing.
+TotalEdit=141
+TotalDebug=0
+D1_E=141
+D1_D=0
+D1_L22=[84284]Project Closed.
+D2=03-03-2021
+D2_L=27
+D2_L1=[51837]Project Opened.
+D2_L2=[51911]Started Editing.
+D2_L3=[53526]Stopped Editing.
+D2_L4=[54100]Started Editing.
+D2_L5=[54503]Stopped Editing.
+D2_L6=[54758]Started Editing.
+D2_L7=[55897]Stopped Editing.
+D2_L8=[55951]Project Closed.
+D2_L9=[55954]Project Opened.
+D2_L10=[55974]Started Editing.
+D2_L11=[57421]Stopped Editing.
+D2_L12=[57742]Started Editing.
+D2_L13=[58487]Stopped Editing.
+D2_L14=[59970]Project Closed.
+D2_L15=[79145]Project Opened.
+D2_L16=[79164]Started Editing.
+D2_L17=[79504]Stopped Editing.
+D2_L18=[79909]Started Editing.
+D2_L19=[80480]Stopped Editing.
+D2_L20=[80498]Started Editing.
+D2_L21=[81524]Stopped Editing.
+D2_L22=[81758]Started Editing.
+D2_L23=[82265]Stopped Editing.
+D2_L24=[82563]Started Editing.
+D2_L25=[83034]Stopped Editing.
+D2_L26=[83079]Started Editing.
+D2_L27=[85092]Stopped Editing.
+D3=04-03-2021
+D3_L=10
+D3_L1=[2167]Started Editing.
+D3_L2=[3025]Stopped Editing.
+D3_L3=[3092]Started Editing.
+D3_L4=[4111]Stopped Editing.
+D3_L5=[4147]Started Editing.
+D3_L6=[6177]Project Closed.
+D3_L7=[47250]Project Opened.
+D3_L8=[48958]Started Editing.
+D3_L9=[49623]Stopped Editing.
+D3_L10=[49799]Project Closed.
+
+[Opened Files]
+1=GYSA.c
+t1=1
+Count=1
+
+[fileformats]
+forcecoff=0
+[Units]
+Count=1
+1=GYSA (main)

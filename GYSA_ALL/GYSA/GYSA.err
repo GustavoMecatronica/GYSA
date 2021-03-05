@@ -1,0 +1,5 @@
+Compiling C:\Users\Gustavo\Documents\UNIVERSIDAD\5TO CUATRIMESTRE\INTEGRADORA\GYSA\GYSA on 04-mar.-21 at 13:48
+>>> Warning 216 "C:\Users\Gustavo\Documents\UNIVERSIDAD\5TO CUATRIMESTRE\INTEGRADORA\GYSA\GYSA.c" Line 430(1,2): Interrupts disabled during call to prevent re-entrancy:  (@delay_ms1)
+      Memory usage:   ROM=12%      RAM=4% - 17%
+      0 Errors,  1 Warnings.
+Build Successful.
